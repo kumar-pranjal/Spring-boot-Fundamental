@@ -5,11 +5,17 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.leanstack.webapp.ws.model.Greeting;
 import com.leanstack.webapp.ws.repository.GreetingRepository;
 
 @Service
+@Transactional(
+		propagation = Propagation.SUPPORTS,
+		readOnly = true
+)
 public class GreetingServiceImpl implements GreetingService{			
 
 	@Autowired
@@ -28,6 +34,9 @@ public class GreetingServiceImpl implements GreetingService{
 	}
 
 	@Override
+	@Transactional(
+			propagation = Propagation.REQUIRED, 
+			readOnly = false)
 	public Greeting create(Greeting greeting) {
 		
 		if(greeting.getId() != null) {
@@ -36,12 +45,19 @@ public class GreetingServiceImpl implements GreetingService{
 		}
 		
 		Greeting savedGreeting = greetingRepository.save(greeting);
+		
+		//Illustration of Roll back Scenario
+		if(savedGreeting.getId() == 4) {
+			throw new RuntimeException("Rollback Scenario");
+		}
+		
+		
 		return savedGreeting;
 	}
 
 	@Override
 	public Greeting update(Greeting greeting) {
-		
+			
 		Optional<Greeting> persitedGreeting = greetingRepository.findById(greeting.getId());
 		if(persitedGreeting == null) {
 			//Cannot update as supplied greeting is present in DB
@@ -53,6 +69,9 @@ public class GreetingServiceImpl implements GreetingService{
 	}
 
 	@Override
+	@Transactional(
+			propagation = Propagation.REQUIRED, 
+			readOnly = false)
 	public void delete(Long id) {
 		greetingRepository.deleteById(id);		
 	}
