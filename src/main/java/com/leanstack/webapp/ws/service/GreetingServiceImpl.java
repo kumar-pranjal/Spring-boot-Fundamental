@@ -4,6 +4,9 @@ import java.util.Collection;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +31,9 @@ public class GreetingServiceImpl implements GreetingService{
 	}
 
 	@Override
+	@Cacheable(
+			value = "greetings",
+			key = "#id")
 	public Optional<Greeting> findOne(Long id) {
 		Optional<Greeting> greeting = greetingRepository.findById(id);
 		return greeting;
@@ -37,6 +43,9 @@ public class GreetingServiceImpl implements GreetingService{
 	@Transactional(
 			propagation = Propagation.REQUIRED, 
 			readOnly = false)
+	@CachePut(
+			value = "greetings",
+			key = "#result.id")
 	public Greeting create(Greeting greeting) {
 		
 		if(greeting.getId() != null) {
@@ -56,6 +65,12 @@ public class GreetingServiceImpl implements GreetingService{
 	}
 
 	@Override
+	@Transactional(
+			propagation = Propagation.REQUIRED, 
+			readOnly = false)
+	@CachePut(
+			value = "greetings",
+			key = "#greeting.id")
 	public Greeting update(Greeting greeting) {
 			
 		Optional<Greeting> persitedGreeting = greetingRepository.findById(greeting.getId());
@@ -72,8 +87,19 @@ public class GreetingServiceImpl implements GreetingService{
 	@Transactional(
 			propagation = Propagation.REQUIRED, 
 			readOnly = false)
+	@CacheEvict(
+			value = "greetings",
+			key = "#id")
 	public void delete(Long id) {
 		greetingRepository.deleteById(id);		
+	}
+
+	@Override
+	@CacheEvict(
+			value = "greetings",
+			allEntries = true)
+	public void evitCache() {
+		
 	}
 
 }
